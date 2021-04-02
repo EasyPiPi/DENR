@@ -33,8 +33,8 @@ corresponding transcripts}
 \item{\code{masks}}{a list of matrices with numeric values between 0 and 1
 that are used to modify the models}
 
-\item{\code{transcript_model_key}}{A three column \code{data.frame} that maps
-transcripts to their group and model}
+\item{\code{transcript_model_key}}{A five column \code{data.frame} that maps
+transcripts to their group, model, TSS and TTS groups}
 
 \item{\code{counts}}{a list of vectors containing the read counts per bin.
 Initialized empty.}

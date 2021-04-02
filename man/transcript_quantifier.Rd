@@ -18,7 +18,7 @@ transcript_quantifier(
 \arguments{
 \item{transcripts}{a \link[GenomicRanges]{GRanges-class} object that must
 contain a metadata column with a transcript id and may contain an additional
-column with a gene id}
+column with a gene id.}
 
 \item{transcript_name_column}{A string that indicates which column in the
 GRanges object contain the transcript names}

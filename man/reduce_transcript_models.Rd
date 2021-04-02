@@ -6,12 +6,21 @@
 \usage{
 reduce_transcript_models(
   transcript_models_ls,
+  transcripts,
+  transcript_name_column,
   bin_operation = c("round", "floor", "ceiling")
 )
 }
 \arguments{
 \item{transcript_models_ls}{A list of matrices where each row in the matrix
 corresponds to a bin and each column is a transcript.}
+
+\item{transcripts}{a \link[GenomicRanges]{GRanges-class} object that must
+contain a metadata column with a transcript id and may contain an additional
+column with a gene id.}
+
+\item{transcript_name_column}{A string that indicates which column in the
+GRanges object contain the transcript names}
 
 \item{bin_operation}{Three different modes to deal with decimals in the
 transript model (due to partial overlap of the first or last exon and bins).

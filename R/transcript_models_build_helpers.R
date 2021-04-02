@@ -289,16 +289,23 @@ group_transcripts <- function(transcript_granges, distance = 0) {
 #'
 #' @param transcript_models_ls A list of matrices where each row in the matrix
 #' corresponds to a bin and each column is a transcript.
+#' @param transcripts a \link[GenomicRanges]{GRanges-class} object that must
+#' contain a metadata column with a transcript id and may contain an additional
+#' column with a gene id.
+#' @param transcript_name_column A string that indicates which column in the
+#' GRanges object contain the transcript names
 #' @param bin_operation Three different modes to deal with decimals in the
 #' transript model (due to partial overlap of the first or last exon and bins).
 #' Either "ceiling", "floor", or "round" (default: "round").
-#'
 #' @return  A list of matrices holding the reduced transcript models and a
 #' dataframe holding each transcript belongs to which group and reduced model.
 #' @export
 reduce_transcript_models <-
   function(transcript_models_ls,
-           bin_operation = c("round", "floor", "ceiling")) {
+           transcripts,
+           transcript_name_column,
+           bin_operation = c("round", "floor", "ceiling")
+           ) {
     # check transcript class
     tx_model_class_matrix <- unique(sapply(transcript_models_ls, is.matrix))
     if (!all(tx_model_class_matrix)) {
@@ -331,8 +338,50 @@ reduce_transcript_models <-
                                  model = unlist(mapply(rep, lapply(group_len, seq_along),
                                                        group_len, SIMPLIFY = FALSE)))
     rownames(tx_group_model) <- NULL
-    return(list(reduced_tx_models, tx_group_model))
+    # create groups based on TSS and TTS positions
+    get_start_end_set <- function(tx_models) {
+        # get first and last non-zero values in model
+        tx_models <- tx_models != 0
+        tx_start_end <- apply(tx_models, 2, function(x) {
+            vec <- which(x)
+            return(c(vec[1], vec[length(vec)]))
+        })
+        # get unique start and end positions
+        start_bin <- unique(tx_start_end[1, ])
+        end_bin <- unique(tx_start_end[2, ])
+        # a dataframe record the grouping for start and end
+        start_end_df <-
+            data.frame(tx_name = colnames(tx_start_end),
+                       start_set = match(tx_start_end[1, ], start_bin),
+                       end_set = match(tx_start_end[2, ], end_bin))
+        return(start_end_df)
     }
+    start_end_dfs <- lapply(integer_models, get_start_end_set)
+    start_end_df <- do.call(rbind.data.frame, start_end_dfs)
+    tx_group_model <- merge.data.frame(tx_group_model, start_end_df)
+    # get strand info
+    tx_group_model <-
+        merge.data.frame(
+            tx_group_model,
+            data.frame(
+                tx_name = GenomicRanges::values(transcripts)[, transcript_name_column],
+                strand = GenomicRanges::strand(transcripts)
+            )
+        )
+    # get tss and tts for transcripts on different strand
+    tx_group_model$tss_set <-
+        ifelse(tx_group_model$strand == "+",
+               tx_group_model$start_set,
+               tx_group_model$end_set)
+    tx_group_model$tts_set <-
+        ifelse(tx_group_model$strand == "+",
+               tx_group_model$end_set,
+               tx_group_model$start_set)
+    tx_group_model <-
+        tx_group_model[c("tx_name", "group", "model", "tss_set", "tts_set")]
+
+    return(list(reduced_tx_models, tx_group_model))
+}
 
 #' Group transcripts
 #'

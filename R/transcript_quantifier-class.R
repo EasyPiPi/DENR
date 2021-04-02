@@ -52,8 +52,8 @@ transcript_quantifier_valid <- function(object) {
 #' corresponding transcripts
 #' @slot masks a list of matrices with numeric values between 0 and 1
 #' that are used to modify the models
-#' @slot transcript_model_key A three column \code{data.frame} that maps
-#' transcripts to their group and model
+#' @slot transcript_model_key A five column \code{data.frame} that maps
+#' transcripts to their group, model, TSS and TTS groups
 #' @slot counts a list of vectors containing the read counts per bin.
 #' Initialized empty.
 #' @slot upstream_polymerase_ratios the log2 ratio of mean counts for each transcript
@@ -91,9 +91,6 @@ methods::setClass("transcript_quantifier",
 #' transcript_quantifier
 #'
 #' Contructs an object that holds the transcript models
-#' @param transcripts a \link[GenomicRanges]{GRanges-class} object that must
-#' contain a metadata column with a transcript id and may contain an additional
-#' column with a gene id
 #' @param gene_name_column a string that indicates which column in the
 #' GRanges object contains the gene names (not required)
 #' @param distance the distance within which two transcripts are
@@ -209,6 +206,8 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   message("Merging redundant models ...")
   reduced_models <- reduce_transcript_models(
     transcript_models_ls = mask_transcripts(tx_models, model_masks),
+    transcripts = transcripts,
+    transcript_name_column,
     bin_operation = bin_operation)
 
   if (is.null(gene_name_column)) {
