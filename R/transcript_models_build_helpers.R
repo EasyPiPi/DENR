@@ -344,6 +344,8 @@ reduce_transcript_models <-
         tx_models <- tx_models != 0
         tx_start_end <- apply(tx_models, 2, function(x) {
             vec <- which(x)
+            # deal with vector with all 0s
+            if (is.integer(vec) && length(vec) == 0L) vec <- c(0, 0)
             return(c(vec[1], vec[length(vec)]))
         })
         # get unique start and end positions
