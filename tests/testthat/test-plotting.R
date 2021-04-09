@@ -54,9 +54,9 @@ test_that("get_transcripts", {
 })
 
 test_that("get_masks", {
-  expect_equivalent(DENR:::get_masks(tq, "t1.1"),
+  expect_equivalent(DENR:::get_masks(tq, "t1.1")[[1]],
                     tq@bins[[2]][tq@masks[[2]]])
-  expect_equivalent(DENR:::get_masks(tq, c("t2.1", "t1.2")),
+  expect_equivalent(DENR:::get_masks(tq, c("t2.1", "t1.2"))[[1]],
                     c(tq@bins[[1]][tq@masks[[1]]],
                       (tq@bins[[2]][tq@masks[[2]]])))
 })

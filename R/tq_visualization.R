@@ -87,7 +87,10 @@ plot_model <- function(tq,
     gid_col <- tq@column_identifiers[2]
     transcripts <- S4Vectors::elementMetadata(target_tx)[, tx_col]
     all_masks <- get_masks(tq, transcripts)
-    target_masks <- GenomicRanges::reduce(all_masks)
+    target_masks <- GenomicRanges::reduce(all_masks[[1]])
+    add_masks <- all_masks[[2]]
+    if (!is.null(add_masks)) add_masks <-
+        GenomicRanges::reduce(add_masks, ignore.strand = TRUE)
 
     # Transcripts track
     if (!is.na(gid_col)) {
@@ -132,16 +135,20 @@ plot_model <- function(tq,
     tx_track@dp@pars$shape <- "arrow"
 
     # Masks track
-    masks_track <- Gviz::AnnotationTrack(target_masks,
-                                         name = "model masks",
-                                         feature = Gviz::strand(target_masks),
-                                         shape = "box",
-                                         chromosome = chrom)
-
-    add_masks_track <- Gviz::AnnotationTrack(tq@add_mask,
-                                             name = "additional masks",
+    mask_tracks <- list()
+    if (length(target_masks) > 0) {
+        mask_tracks[["model"]] <- Gviz::AnnotationTrack(target_masks,
+                                             name = "model masks",
+                                             feature = Gviz::strand(target_masks),
                                              shape = "box",
                                              chromosome = chrom)
+    }
+    if (length(add_masks) > 0) {
+        mask_tracks[["add"]] <- Gviz::AnnotationTrack(add_masks,
+                                                 name = "additional masks",
+                                                 shape = "box",
+                                                 chromosome = chrom)
+    }
 
     # Some objects for data retrieval
     data_tracks <- list()
@@ -265,8 +272,8 @@ plot_model <- function(tq,
         trackList = list(
             axis_track,
             tx_track,
-            masks_track,
-            add_masks_track,
+            mask_tracks[["model"]],
+            mask_tracks[["add"]],
             data_tracks[["+"]],
             data_tracks[["-"]],
             abundance_tracks[["+"]],
@@ -389,7 +396,7 @@ get_masks <- function(tq, transcripts) {
     } else {
         add_masks <- NULL
     }
-    return(target_masks)
+    return(list(target_masks, add_masks))
 }
 
 #' @title Get data
