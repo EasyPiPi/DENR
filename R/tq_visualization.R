@@ -86,8 +86,8 @@ plot_model <- function(tq,
     tx_col <- tq@column_identifiers[1]
     gid_col <- tq@column_identifiers[2]
     transcripts <- S4Vectors::elementMetadata(target_tx)[, tx_col]
-    target_masks <- get_masks(tq, transcripts)
-    target_masks <- GenomicRanges::reduce(target_masks)
+    all_masks <- get_masks(tq, transcripts)
+    target_masks <- GenomicRanges::reduce(all_masks)
 
     # Transcripts track
     if (!is.na(gid_col)) {
@@ -133,10 +133,16 @@ plot_model <- function(tq,
 
     # Masks track
     masks_track <- Gviz::AnnotationTrack(target_masks,
-                                         name = "masks",
+                                         name = "model masks",
                                          feature = Gviz::strand(target_masks),
                                          shape = "box",
                                          chromosome = chrom)
+
+    add_masks_track <- Gviz::AnnotationTrack(tq@add_mask,
+                                             name = "additional masks",
+                                             shape = "box",
+                                             chromosome = chrom)
+
     # Some objects for data retrieval
     data_tracks <- list()
     bw_files <- c(`+` = bigwig_plus, `-` = bigwig_minus)
@@ -260,6 +266,7 @@ plot_model <- function(tq,
             axis_track,
             tx_track,
             masks_track,
+            add_masks_track,
             data_tracks[["+"]],
             data_tracks[["-"]],
             abundance_tracks[["+"]],
@@ -372,6 +379,15 @@ get_masks <- function(tq, transcripts) {
     target_masks <- GenomicRanges::GRanges()
     for (g in target_group) {
         target_masks <- c(target_masks, tq@bins[[g]][tq@masks[[g]]])
+    }
+    # get additional masks, could be returned for graphic if necessary
+    if (!is.null(tq@add_mask_bins[[1]])) {
+        add_masks <- GenomicRanges::GRanges()
+        for (k in target_group) {
+            add_masks <- c(add_masks, tq@bins[[k]][tq@add_mask_bins[[k]]])
+        }
+    } else {
+        add_masks <- NULL
     }
     return(target_masks)
 }

@@ -12,7 +12,8 @@ transcript_quantifier(
   distance = NULL,
   mask_start_bins = NULL,
   mask_end_bins = NULL,
-  bin_operation = c("round", "floor", "ceiling")
+  bin_operation = c("round", "floor", "ceiling"),
+  add_mask = NULL
 )
 }
 \arguments{
@@ -47,6 +48,10 @@ the second interger is the number outside the transcript. Default c(0, 0).}
 \item{bin_operation}{Three different modes to deal with decimals in the
 transript model (due to partial overlap of the first or last exon and bins).
 Either "ceiling", "floor", or "round" (default: "round").}
+
+\item{add_mask}{A \code{\link[GenomicRanges]{GRanges-class}}
+object records genomic regions being masked. If seqnames in add_mask are not
+available in transcripts, entries associated with these seqnames will be removed.}
 }
 \value{
 an \code{\link{transcript_quantifier-class}} object

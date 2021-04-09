@@ -222,6 +222,57 @@ test_that("Transcript masking", {
                "transcript models must be a list of matricies")
   })
 
+test_that("Additional masking for genomic regions", {
+    test_tx <- GenomicRanges::GRangesList(
+        grp1 = GenomicRanges::GRanges(c(2, 2),
+                                      IRanges::IRanges(c(301, 356), c(500, 475)),
+                                      tx_name = c("t1", "t2")),
+        grp2 = GenomicRanges::GRanges(c(1, 1),
+                                      IRanges::IRanges(c(701, 756), c(900, 975)),
+                                      tx_name = c("t3", "t4")
+                                      )
+    )
+
+    tx_bins_25 <- create_bins(test_tx, bin_size = 25)
+    # Test masks and bins on same chromosome with overlap
+    add_mask_1 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("2"), c(2)),
+            ranges = IRanges::IRanges(start = c(315, 426),
+                             end = c(326, 450)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)))
+    # Test all regions in bins are masked
+    add_mask_2 <-
+        GenomicRanges::GRanges(
+            seqnames = "2",
+            ranges = IRanges::IRanges(start = 200, end = 600),
+            strand = "*")
+    # Test masks and bins on same chromosome without overlap
+    add_mask_3 <-
+        GenomicRanges::GRanges(
+            seqnames = "1",
+            ranges = IRanges::IRanges(start = 200, end = 600),
+            strand = "*")
+    # Test masks and bins on different chromosomes
+    add_mask_4 <-
+        GenomicRanges::GRanges(
+            seqnames = "4",
+            ranges = IRanges::IRanges(start = 200, end = 600),
+            strand = "*")
+
+    expect_equal(create_additional_masks(tx_bins_25, add_mask_1),
+                 list("grp1" = c(1, 2, 6), "grp2" = integer(0)))
+
+    expect_equal(create_additional_masks(tx_bins_25, add_mask_2),
+                 list("grp1" = c(1:8), "grp2" = integer(0)))
+
+    expect_equal(create_additional_masks(tx_bins_25, add_mask_3),
+                 list("grp1" = integer(0), "grp2" = integer(0)))
+
+    expect_equal(create_additional_masks(tx_bins_25, add_mask_4),
+                 list(NULL))
+})
+
 test_that("Transcripts group correctly (single strand)", {
   tx_grp <- group_transcripts(gr_ss)
   # check that two groups are produced

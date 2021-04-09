@@ -50,7 +50,10 @@ transcript_quantifier_valid <- function(object) {
 #' representing the fractional overlap of per transcript per bin where the rows
 #' are the transcripts and the columns are the bins. Rownames are the
 #' corresponding transcripts
-#' @slot masks a list of matrices with numeric values between 0 and 1
+#' @slot masks a list of vectors with integers that are used to modify the models
+#' @slot add_mask a \code{\link[GenomicRanges]{GRanges-class}} object records
+#' genomic regions being masked.
+#' @slot add_mask_bins a list of vectors with integers correspond to add_mask
 #' that are used to modify the models
 #' @slot transcript_model_key A five column \code{data.frame} that maps
 #' transcripts to their group, model, TSS and TTS groups
@@ -79,6 +82,8 @@ methods::setClass("transcript_quantifier",
                             bin_size = "integer",
                             models = "list",
                             masks = "list",
+                            add_mask = "GRanges",
+                            add_mask_bins = "list",
                             transcript_model_key = "data.frame",
                             counts = "list",
                             upstream_polymerase_ratios = "numeric",
@@ -101,6 +106,7 @@ methods::setClass("transcript_quantifier",
 #' @inheritParams create_bins
 #' @inheritParams group_transcripts
 #' @inheritParams create_model_masks
+#' @inheritParams create_additional_masks
 #' @inheritParams reduce_transcript_models
 #' @inheritParams create_transcript_models
 #'
@@ -111,7 +117,8 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                              gene_name_column = NULL,
                              bin_size = 250, distance = NULL,
                              mask_start_bins = NULL, mask_end_bins = NULL,
-                             bin_operation = c("round", "floor", "ceiling")) {
+                             bin_operation = c("round", "floor", "ceiling"),
+                             add_mask = NULL) {
   # **Some checks prior to beginning construction**
   # Check for correct GRanges object metadata
   if (!transcript_name_column %in%
@@ -193,19 +200,34 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   tx_models <- create_transcript_models(transcripts = transcripts,
                                         bins = grp_bins,
                                         bin_size = bin_size,
-                                        transcript_name_column)
+                                        transcript_name_column
+                                        )
 
   # Create masks
-  message("Creating masks ...")
+  message("Creating masks around TSS and TTS...")
   model_masks <- create_model_masks(transcript_models = tx_models,
                                     strand = grp_strand,
                                     mask_start_bins = mask_start_bins,
                                     mask_end_bins = mask_end_bins)
 
+  # Create masks for additional genomic regions
+  message("Creating masks for additional genomic regions...")
+  add_masks <- create_additional_masks(bins = grp_bins,
+                                       add_mask = add_mask)
+
+  # Combine masks
+  if (any(lengths(add_masks) > 0)) {
+      all_masks <- mapply(function(x, y) {
+          unique(sort(c(x, y)))
+      }, model_masks, add_masks[names(model_masks)])
+  } else {
+      all_masks <- model_masks
+  }
+
   # Reduce transcript models and generate transcript_model_key
   message("Merging redundant models ...")
   reduced_models <- reduce_transcript_models(
-    transcript_models_ls = mask_transcripts(tx_models, model_masks),
+    transcript_models_ls = mask_transcripts(tx_models, all_masks),
     transcripts = transcripts,
     transcript_name_column,
     bin_operation = bin_operation)
@@ -226,6 +248,8 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                 bin_size = as.integer(bin_size),
                 models = reduced_models[[1]],
                 masks = model_masks,
+                add_mask = GenomicRanges::GRanges(add_mask),
+                add_mask_bins = add_masks,
                 transcript_model_key = reduced_models[[2]],
                 counts = list(),
                 upstream_polymerase_ratios = numeric(0),

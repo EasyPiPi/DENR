@@ -143,6 +143,40 @@ create_model_masks <- function(transcript_models, strand,
   return(all_masks)
   }
 
+#' Function for generating masks for additional genomic regions
+#'
+#' @param add_mask A \code{\link[GenomicRanges]{GRanges-class}}
+#' object records genomic regions being masked. If seqnames in add_mask are not
+#' available in transcripts, entries associated with these seqnames will be removed.
+#' @rdname create_additional_masks
+#' @inheritParams create_transcript_models
+#' @return A list of vectors, where each vector indicates the bins that should
+#' be masked
+#' @export
+#'
+create_additional_masks <- function(bins, add_mask) {
+    if (!is.null(add_mask)) {
+        # Get non-redundant regions
+        add_mask <- GenomicRanges::reduce(add_mask)
+        # Filter seqnames which are in mask regions but not in bins
+        seq_filter <- as.vector(GenomeInfoDb::seqnames(add_mask)) %in%
+            GenomeInfoDb::seqlevels(bins)
+        add_mask <- add_mask[seq_filter, ]
+        # Find overlaps between bins and masks
+        if (length(add_mask) > 0) {
+            add_masks <-
+                lapply(bins, function(x) {
+                    S4Vectors::queryHits(
+                    GenomicRanges::findOverlaps(x, add_mask, select = "all"))})
+            } else {
+                add_masks <- list(NULL)
+        }
+    } else {
+        add_masks <- list(NULL)
+    }
+    return(add_masks)
+}
+
 #' Mask transcripts
 #'
 #' Function for generating masks
@@ -202,7 +236,6 @@ create_transcript_models <- function(transcripts, bins, bin_size,
   # Compute bin percent overlap for all intersections
   ovr_intersect <- IRanges::pintersect(ovr, drop.nohit.ranges = FALSE)
   ovr_val <- GenomicRanges::width(ovr_intersect) / bin_size
-
   # Compute the dimensions of model matrix for each loci
   d <- S4Vectors::elementNROWS(ovr_val)
   # Pre-extract transcript names for ease of access

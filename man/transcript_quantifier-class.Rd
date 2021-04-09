@@ -30,7 +30,12 @@ representing the fractional overlap of per transcript per bin where the rows
 are the transcripts and the columns are the bins. Rownames are the
 corresponding transcripts}
 
-\item{\code{masks}}{a list of matrices with numeric values between 0 and 1
+\item{\code{masks}}{a list of vectors with integers that are used to modify the models}
+
+\item{\code{add_mask}}{a \code{\link[GenomicRanges]{GRanges-class}} object records
+genomic regions being masked.}
+
+\item{\code{add_mask_bins}}{a list of vectors with integers correspond to add_mask
 that are used to modify the models}
 
 \item{\code{transcript_model_key}}{A five column \code{data.frame} that maps
