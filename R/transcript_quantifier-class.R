@@ -196,7 +196,7 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                 bin_size = bin_size)
 
   # Create transcript models
-  message("Creating transcript models ...")
+  message("Creating transcript models...")
   tx_models <- create_transcript_models(transcripts = transcripts,
                                         bins = grp_bins,
                                         bin_size = bin_size,
@@ -215,14 +215,9 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   add_masks <- create_additional_masks(bins = grp_bins,
                                        add_mask = add_mask)
 
-  # Combine masks
-  if (any(lengths(add_masks) > 0)) {
-      all_masks <- mapply(function(x, y) {
-          unique(sort(c(x, y)))
-      }, model_masks, add_masks[names(model_masks)])
-  } else {
-      all_masks <- model_masks
-  }
+  # Combine masks based on transcript model and additional regions
+  message("Combining masks...")
+  all_masks <- combine_masks(model_masks = model_masks, add_masks = add_masks)
 
   # Reduce transcript models and generate transcript_model_key
   message("Merging redundant models ...")

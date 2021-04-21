@@ -180,7 +180,7 @@ transcript_shape_profile <- function(transcripts,
 
   # 6) Extract the relevant scores
   plus_counts <- summarize_bigwig(bigwig_file = bigwig_plus, final_bins[plus_grps])
-  minus_counts <- lapply(summarize_bigwig(bigwig_file = bigwig_plus,
+  minus_counts <- lapply(summarize_bigwig(bigwig_file = bigwig_minus,
                                   final_bins[minus_grps]), rev) # reverse minus
   raw_counts <- c(plus_counts, minus_counts)
 

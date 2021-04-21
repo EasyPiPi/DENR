@@ -177,6 +177,26 @@ create_additional_masks <- function(bins, add_mask) {
     return(add_masks)
 }
 
+#' Function for combining masks
+#'
+#' @param model_masks,add_masks A list of vectors, where each vector indicates
+#' the bins that should be masked.
+#' @rdname combine_masks
+#' @return A list of vectors, where each vector has combined the masks, and indicates
+#' the bins that should be masked.
+#' @export
+#'
+combine_masks <- function(model_masks, add_masks) {
+    if (any(lengths(add_masks) > 0)) {
+        all_masks <- mapply(function(x, y) {
+            unique(sort(c(x, y)))
+        }, model_masks, add_masks[names(model_masks)])
+    } else {
+        all_masks <- model_masks
+    }
+    return(all_masks)
+}
+
 #' Mask transcripts
 #'
 #' Function for generating masks
