@@ -197,6 +197,41 @@ combine_masks <- function(model_masks, add_masks) {
     return(all_masks)
 }
 
+#' Function for scaling bins for masking additional genomic regions
+#'
+#' @param add_mask A \code{\link[GenomicRanges]{GRanges-class}}
+#' object records genomic regions being masked. If seqnames in add_mask are not
+#' available in transcripts, entries associated with these seqnames will be removed.
+#' @rdname scale_additional_masks
+#' @inheritParams create_transcript_models
+#' @return A list of vectors, where each vector indicates the fractions to scale
+#' the bins
+#' @export
+#'
+scale_additional_masks <- function(bins, add_mask) {
+    # Get non-redundant masking regions
+    add_mask <- GenomicRanges::reduce(add_mask)
+    # Filter seqnames which are in mask regions but not in bins
+    seq_filter <-
+        as.vector(GenomeInfoDb::seqnames(add_mask)) %in%
+        GenomeInfoDb::seqlevels(bins)
+    add_mask <- add_mask[seq_filter,]
+    if (length(add_mask) == 0) {
+        return(NA)
+    }
+    # Find overlap
+    ovr <- IRanges::findOverlapPairs(add_mask, bins)
+    # Compute bin percent overlap for all intersections
+    ovr_intersect <-
+        IRanges::pintersect(ovr, drop.nohit.ranges = FALSE)
+    ovr_val <- GenomicRanges::width(ovr_intersect) / bin_size
+    ovr_val_ls <- base::split(ovr_val, names(ovr_val))
+    add_scale <- lapply(ovr_val_ls, function(x) {
+        1 - colSums(as.matrix(x))
+    })
+    return(add_scale)
+}
+
 #' Mask transcripts
 #'
 #' Function for generating masks

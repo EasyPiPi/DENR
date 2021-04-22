@@ -54,7 +54,10 @@ transcript_quantifier_valid <- function(object) {
 #' @slot add_mask a \code{\link[GenomicRanges]{GRanges-class}} object records
 #' genomic regions being masked.
 #' @slot add_mask_bins a list of vectors with integers correspond to add_mask
-#' that are used to modify the models
+#' that are used to modify the models.
+#' @slot add_mask_scale A logical value indicates if additional genomic regions
+#' are masked, when these regions are partially overlapped with bins, whether to
+#' scale the bins by the proportion of overlap, or set the bins to 0.
 #' @slot transcript_model_key A five column \code{data.frame} that maps
 #' transcripts to their group, model, TSS and TTS groups
 #' @slot counts a list of vectors containing the read counts per bin.
@@ -84,6 +87,7 @@ methods::setClass("transcript_quantifier",
                             masks = "list",
                             add_mask = "GRanges",
                             add_mask_bins = "list",
+                            add_mask_scale = "logical",
                             transcript_model_key = "data.frame",
                             counts = "list",
                             upstream_polymerase_ratios = "numeric",
@@ -96,13 +100,17 @@ methods::setClass("transcript_quantifier",
 #' transcript_quantifier
 #'
 #' Contructs an object that holds the transcript models
-#' @param gene_name_column a string that indicates which column in the
-#' GRanges object contains the gene names (not required)
-#' @param distance the distance within which two transcripts are
+#' @param gene_name_column A string that indicates which column in the
+#' GRanges object contains the gene names (not required).
+#' @param distance The distance within which two transcripts are
 #' considered connected (must be at least bin size, defaults to bin size). The
 #' smaller this value is the more efficiently the model can be fit. Only
 #' increase this if you are masking large regions at the starts and ends of
 #' genes.
+#' @param add_mask_scale A logical value indicates if additional genomic regions
+#' are masked, when these regions are partially overlapped with bins, whether to
+#' scale the bins by the proportion of overlap, or set the bins to 0.
+#' Default is FALSE, i.e., set the bins to 0.
 #' @inheritParams create_bins
 #' @inheritParams group_transcripts
 #' @inheritParams create_model_masks
@@ -118,7 +126,7 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                              bin_size = 250, distance = NULL,
                              mask_start_bins = NULL, mask_end_bins = NULL,
                              bin_operation = c("round", "floor", "ceiling"),
-                             add_mask = NULL) {
+                             add_mask = NULL, add_mask_scale = FALSE) {
   # **Some checks prior to beginning construction**
   # Check for correct GRanges object metadata
   if (!transcript_name_column %in%
@@ -170,6 +178,10 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   if (distance < 0) {
     stop("Distance cannot be less than 0")
   }
+  # Check add_mask_scale
+  if (!(isTRUE(add_mask_scale) | isFALSE(add_mask_scale))) {
+      stop("add_mask_scale must be TRUE or FALSE")
+  }
 
   # **End checks**
 
@@ -210,14 +222,34 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                                     mask_start_bins = mask_start_bins,
                                     mask_end_bins = mask_end_bins)
 
-  # Create masks for additional genomic regions
-  message("Creating masks for additional genomic regions...")
-  add_masks <- create_additional_masks(bins = grp_bins,
-                                       add_mask = add_mask)
+  # Process additional masks depending on add_mask_scale
+  all_masks <- model_masks
+  add_masks <- list(NULL)
 
-  # Combine masks based on transcript model and additional regions
-  message("Combining masks...")
-  all_masks <- combine_masks(model_masks = model_masks, add_masks = add_masks)
+  if (!is.null(add_mask)) {
+      if (!add_mask_scale) {
+          # Create masks for additional genomic regions
+          message("Creating masks for additional genomic regions...")
+          add_masks <- create_additional_masks(bins = grp_bins,
+                                               add_mask = add_mask)
+          # Combine masks based on transcript model and additional regions
+          message("Combining masks...")
+          all_masks <-
+              combine_masks(model_masks = model_masks, add_masks = add_masks)
+      } else if (add_mask_scale) {
+         # Scaling bins for masking additional genomic regions
+          message("Scaling bins for masking additional genomic regions...")
+          add_scale <- scale_additional_masks(bins = grp_bins,
+                                              add_mask = add_mask)
+          # creat a empty list containing all tx groups
+          add_sc <- sapply(names(tx_models), function(x) NA, simplify = FALSE)
+          add_sc[names(add_scale)] <- add_scale
+          # if no regions are masked, replace the vector as 1
+          add_sc[is.na(add_sc)] <- 1
+          tx_models <- mapply(function(x, y) x * y,
+                 tx_models, add_sc, SIMPLIFY = FALSE)
+      }
+  }
 
   # Reduce transcript models and generate transcript_model_key
   message("Merging redundant models ...")
