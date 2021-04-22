@@ -208,14 +208,14 @@ combine_masks <- function(model_masks, add_masks) {
 #' the bins
 #' @export
 #'
-scale_additional_masks <- function(bins, add_mask) {
+scale_additional_masks <- function(bins, add_mask, bin_size) {
     # Get non-redundant masking regions
     add_mask <- GenomicRanges::reduce(add_mask)
     # Filter seqnames which are in mask regions but not in bins
     seq_filter <-
         as.vector(GenomeInfoDb::seqnames(add_mask)) %in%
         GenomeInfoDb::seqlevels(bins)
-    add_mask <- add_mask[seq_filter,]
+    add_mask <- add_mask[seq_filter, ]
     if (length(add_mask) == 0) {
         return(NA)
     }

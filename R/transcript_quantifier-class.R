@@ -240,7 +240,8 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
          # Scaling bins for masking additional genomic regions
           message("Scaling bins for masking additional genomic regions...")
           add_scale <- scale_additional_masks(bins = grp_bins,
-                                              add_mask = add_mask)
+                                              add_mask = add_mask,
+                                              bin_size = bin_size)
           # creat a empty list containing all tx groups
           add_sc <- sapply(names(tx_models), function(x) NA, simplify = FALSE)
           add_sc[names(add_scale)] <- add_scale

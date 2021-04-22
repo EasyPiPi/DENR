@@ -13,7 +13,8 @@ transcript_quantifier(
   mask_start_bins = NULL,
   mask_end_bins = NULL,
   bin_operation = c("round", "floor", "ceiling"),
-  add_mask = NULL
+  add_mask = NULL,
+  add_mask_scale = FALSE
 )
 }
 \arguments{
@@ -24,12 +25,12 @@ column with a gene id.}
 \item{transcript_name_column}{A string that indicates which column in the
 GRanges object contain the transcript names}
 
-\item{gene_name_column}{a string that indicates which column in the
-GRanges object contains the gene names (not required)}
+\item{gene_name_column}{A string that indicates which column in the
+GRanges object contains the gene names (not required).}
 
 \item{bin_size}{An integer, used to tile the gene region. Default is 250bp.}
 
-\item{distance}{the distance within which two transcripts are
+\item{distance}{The distance within which two transcripts are
 considered connected (must be at least bin size, defaults to bin size). The
 smaller this value is the more efficiently the model can be fit. Only
 increase this if you are masking large regions at the starts and ends of
@@ -52,6 +53,11 @@ Either "ceiling", "floor", or "round" (default: "round").}
 \item{add_mask}{A \code{\link[GenomicRanges]{GRanges-class}}
 object records genomic regions being masked. If seqnames in add_mask are not
 available in transcripts, entries associated with these seqnames will be removed.}
+
+\item{add_mask_scale}{A logical value indicates if additional genomic regions
+are masked, when these regions are partially overlapped with bins, whether to
+scale the bins by the proportion of overlap, or set the bins to 0.
+Default is FALSE, i.e., set the bins to 0.}
 }
 \value{
 an \code{\link{transcript_quantifier-class}} object

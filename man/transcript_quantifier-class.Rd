@@ -36,7 +36,11 @@ corresponding transcripts}
 genomic regions being masked.}
 
 \item{\code{add_mask_bins}}{a list of vectors with integers correspond to add_mask
-that are used to modify the models}
+that are used to modify the models.}
+
+\item{\code{add_mask_scale}}{A logical value indicates if additional genomic regions
+are masked, when these regions are partially overlapped with bins, whether to
+scale the bins by the proportion of overlap, or set the bins to 0.}
 
 \item{\code{transcript_model_key}}{A five column \code{data.frame} that maps
 transcripts to their group, model, TSS and TTS groups}
