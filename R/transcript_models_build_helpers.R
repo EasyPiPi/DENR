@@ -405,10 +405,18 @@ reduce_transcript_models <-
       stop("invalid arguement for bin_operation, it should be 'ceiling', 'floor', ",
            "or 'round'.")
     }
-    # deal with decimals in transcript models
-    integer_models <- lapply(transcript_models_ls, function(x, fun) {
-      do.call(fun, list(x))
-    }, fun = bin_operation)
+    # deal with decimals in transcript models (only modify the starts and ends)
+    integer_models <-
+        lapply(transcript_models_ls, function(txm) {
+            apply(txm, 2, function(x) {
+                idx <- which(x > 0)
+                x[idx[1]] <- do.call(bin_operation, list(x[idx[1]]))
+                x[idx[length(idx)]] <-
+                    do.call(bin_operation, list(x[idx[length(idx)]]))
+                return(x)
+            })
+        })
+
     # compute reduced transcript groups
     tx_groups <- lapply(integer_models, group_trancript_models)
     # get reduced tx models
