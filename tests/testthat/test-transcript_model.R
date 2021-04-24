@@ -273,6 +273,23 @@ test_that("Additional masking for genomic regions", {
                  list(NULL))
 })
 
+test_that("Combining two sets of masks", {
+    ls_1 <- list("A" = c(1, 3, 5), "B" = c(5, 7, 9))
+    ls_2 <- list("A" = c(2, 4, 6), "B" = c(4, 6, 8))
+    ls_3 <- list("A" = integer(0), "B" = integer(0))
+    ls_4 <- list("B" = c(4, 6, 8))
+
+    expect_equal(combine_masks(ls_1, ls_2), list("A" = 1:6, "B" = 4:9))
+
+    expect_equal(combine_masks(ls_1, ls_3), ls_1)
+
+    expect_equal(combine_masks(ls_3, ls_1), ls_1)
+
+    expect_equal(combine_masks(ls_3, list(NULL)), ls_3)
+
+    expect_equal(combine_masks(ls_1, ls_4), list("A" = c(1, 3, 5), "B" = 4:9))
+})
+
 test_that("Transcripts group correctly (single strand)", {
   tx_grp <- group_transcripts(gr_ss)
   # check that two groups are produced

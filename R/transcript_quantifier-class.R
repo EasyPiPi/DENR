@@ -184,7 +184,6 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   }
 
   # **End checks**
-
   # Force copy of object underlying GRanges to prevent any weird side effects if
   # GRanges is using a data.table or something else that can modify in place
   transcripts <- GenomicRanges::makeGRangesFromDataFrame(
@@ -275,9 +274,10 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
                 bins = grp_bins,
                 bin_size = as.integer(bin_size),
                 models = reduced_models[[1]],
-                masks = all_masks,
+                masks = model_masks,
                 add_mask = GenomicRanges::GRanges(add_mask),
                 add_mask_bins = add_masks,
+                add_mask_scale = add_mask_scale,
                 transcript_model_key = reduced_models[[2]],
                 counts = list(),
                 upstream_polymerase_ratios = numeric(0),

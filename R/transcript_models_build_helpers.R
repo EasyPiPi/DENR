@@ -187,14 +187,17 @@ create_additional_masks <- function(bins, add_mask) {
 #' @export
 #'
 combine_masks <- function(model_masks, add_masks) {
-    if (any(lengths(add_masks) > 0)) {
+    # if both masks exist, combine them
+    if (any(lengths(model_masks) > 0) && any(lengths(add_masks) > 0)) {
         all_masks <- mapply(function(x, y) {
             unique(sort(c(x, y)))
-        }, model_masks, add_masks[names(model_masks)])
-    } else {
-        all_masks <- model_masks
+        }, model_masks, add_masks[names(model_masks)], SIMPLIFY = FALSE)
+        return(all_masks)
     }
-    return(all_masks)
+    # if only additional masks, returns it
+    if (all(lengths(model_masks) == 0) && any(lengths(add_masks) > 0)) return(add_masks)
+    # else return model masks
+    return(model_masks)
 }
 
 #' Function for scaling bins for masking additional genomic regions
@@ -408,24 +411,36 @@ reduce_transcript_models <-
     # deal with decimals in transcript models (only modify the starts and ends)
     integer_models <-
         lapply(transcript_models_ls, function(txm) {
-            apply(txm, 2, function(x) {
+            # handle matrix with row number equal to 1 otherwise apply will return
+            # vector rather than matrix and cause subseting issues later
+            if (nrow(txm) == 1) {
+                txm <- do.call(bin_operation, list(txm))
+                return(txm)
+                }
+            txm <- apply(txm, 2, function(x) {
                 idx <- which(x > 0)
-                x[idx[1]] <- do.call(bin_operation, list(x[idx[1]]))
-                x[idx[length(idx)]] <-
-                    do.call(bin_operation, list(x[idx[length(idx)]]))
+                if (length(idx) > 0) {
+                    x[idx[1]] <- do.call(bin_operation, list(x[idx[1]]))
+                    x[idx[length(idx)]] <-
+                        do.call(bin_operation, list(x[idx[length(idx)]]))
+                }
                 return(x)
             })
+            return(txm)
         })
 
     # compute reduced transcript groups
     tx_groups <- lapply(integer_models, group_trancript_models)
+
     # get reduced tx models
     get_reduced_tx_models <- function(tx_models, tx_groups) {
       tx_models[, unlist(lapply(tx_groups, function(x) x[[1]])), drop = FALSE]
     }
+
     reduced_tx_models <- mapply(get_reduced_tx_models,
                                 integer_models,
                                 tx_groups, SIMPLIFY = FALSE)
+
     # create group and model identifier for each transcript
     group_len <- lapply(tx_groups, lengths)
     tx_num <- sapply(group_len, sum)

@@ -146,9 +146,11 @@ methods::setMethod("fit",
     }
 
     # Zip together models, counts, and abundances
+    all_masks <- combine_masks(tq@masks, tq@add_mask_bins)
+
     sufficient_values <- mapply(function(x, y, z, za) {
       list(abundance = x, models = y, counts = z, masks = za)
-    }, tq@model_abundance, tq@models, tq@counts, tq@masks, SIMPLIFY = FALSE)
+    }, tq@model_abundance, tq@models, tq@counts, all_masks, SIMPLIFY = FALSE)
 
     estim <- list()
     if (verbose) {
