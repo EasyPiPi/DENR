@@ -51,3 +51,5 @@ log/
 inst/doc
 doc
 Meta
+
+*.RDS

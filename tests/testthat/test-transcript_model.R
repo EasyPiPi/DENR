@@ -222,7 +222,7 @@ test_that("Transcript masking", {
                "transcript models must be a list of matricies")
   })
 
-test_that("Additional masking for genomic regions", {
+test_that("Mask additional genomic regions", {
     test_tx <- GenomicRanges::GRangesList(
         grp1 = GenomicRanges::GRanges(c(2, 2),
                                       IRanges::IRanges(c(301, 356), c(500, 475)),
@@ -289,6 +289,59 @@ test_that("Combining two sets of masks", {
 
     expect_equal(combine_masks(ls_1, ls_4), list("A" = c(1, 3, 5), "B" = 4:9))
 })
+
+test_that("Scaling bins according to masking", {
+    grp_bin1 <-
+        GenomicRanges::GRanges(
+        seqnames = S4Vectors::Rle(c("1"), c(4)),
+        ranges = IRanges::IRanges(start = seq(from = 1, by = 200, length.out = 4),
+                                  end = seq(from = 200, by = 200, length.out = 4)),
+        strand = S4Vectors::Rle(BiocGenerics::strand(c("+")), c(4)))
+
+    grp_bin2 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("2"), c(4)),
+            ranges = IRanges::IRanges(start = seq(from = 1, by = 200, length.out = 4),
+                                      end = seq(from = 200, by = 200, length.out = 4)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("-")), c(4)))
+
+    grp_bins <-
+        GenomicRanges::GRangesList("bin1" = grp_bin1, "bin2" = grp_bin2)
+
+    add_mask1 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("1"), c(2)),
+            ranges = IRanges::IRanges(start = c(51, 251),
+                                      end = c(200, 400)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)))
+
+    add_mask2 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("1"), c(1)),
+            ranges = IRanges::IRanges(start = c(51),
+                                      end = c(250)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(1)))
+
+    add_mask3 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("2"), c(2)),
+            ranges = IRanges::IRanges(start = c(51, 151),
+                                      end = c(100, 250)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)))
+
+    expect_equal(scale_additional_masks(bins = grp_bins,
+                                        add_mask = add_mask1, bin_size = 200),
+                 list("bin1" = c(0.25, 0.25, 1, 1)))
+
+    expect_equal(scale_additional_masks(bins = grp_bins,
+                                        add_mask = add_mask2, bin_size = 200),
+                 list("bin1" = c(0.25, 0.75, 1, 1)))
+
+    expect_equal(scale_additional_masks(bins = grp_bins,
+                                        add_mask = add_mask3, bin_size = 200),
+                 list("bin2" = c(0.5, 0.75, 1, 1)))
+    }
+)
 
 test_that("Transcripts group correctly (single strand)", {
   tx_grp <- group_transcripts(gr_ss)
