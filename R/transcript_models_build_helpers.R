@@ -222,12 +222,13 @@ scale_additional_masks <- function(bins, add_mask, bin_size) {
     if (length(add_mask) == 0) {
         return(NA)
     }
-    # Find overlap
+    # Find overlaps
     ovr <- IRanges::findOverlapPairs(add_mask, bins)
-    # Compute bin percent overlap for all intersections
+    # Compute the percentages of the bins overlap with the masks
     ovr_intersect <-
         IRanges::pintersect(ovr, drop.nohit.ranges = FALSE)
     ovr_val <- GenomicRanges::width(ovr_intersect) / bin_size
+    # Convert the overlap fractions into vectors
     ovr_val_ls <- base::split(ovr_val, names(ovr_val))
     add_scale <- lapply(ovr_val_ls, function(x) {
         1 - colSums(as.matrix(x))
