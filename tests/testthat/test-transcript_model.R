@@ -308,26 +308,42 @@ test_that("Scaling bins according to masking", {
     grp_bins <-
         GenomicRanges::GRangesList("bin1" = grp_bin1, "bin2" = grp_bin2)
 
+    # It's critical to specify the seqinfo representing the full genome
+    # (or whatever the universe is) on the masks before calling coverage() in
+    # scale_additional_masks. Manually set seqlengths here.
     add_mask1 <-
         GenomicRanges::GRanges(
             seqnames = S4Vectors::Rle(c("1"), c(2)),
             ranges = IRanges::IRanges(start = c(51, 251),
                                       end = c(200, 400)),
-            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)))
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)),
+            seqlengths = c("1" = 1200))
 
     add_mask2 <-
         GenomicRanges::GRanges(
             seqnames = S4Vectors::Rle(c("1"), c(1)),
             ranges = IRanges::IRanges(start = c(51),
                                       end = c(250)),
-            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(1)))
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(1)),
+            seqlengths = c("1" = 1200))
 
     add_mask3 <-
         GenomicRanges::GRanges(
             seqnames = S4Vectors::Rle(c("2"), c(2)),
             ranges = IRanges::IRanges(start = c(51, 151),
                                       end = c(100, 250)),
-            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)))
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(2)),
+            seqlengths = c("2" = 1200))
+
+    add_mask4 <-
+        GenomicRanges::GRanges(
+            seqnames = S4Vectors::Rle(c("1", "2"), c(2, 1)),
+            ranges = IRanges::IRanges(start = c(51, 251, 151),
+                                      end = c(200, 400, 250)),
+            strand = S4Vectors::Rle(BiocGenerics::strand(c("*")), c(3)),
+            seqlengths = c("1" = 1200, "2" = 1200))
+
+    GenomeInfoDb::seqlengths(grp_bins) <- c(1200, 1200)
 
     expect_equal(scale_additional_masks(bins = grp_bins,
                                         add_mask = add_mask1, bin_size = 200),
@@ -340,8 +356,12 @@ test_that("Scaling bins according to masking", {
     expect_equal(scale_additional_masks(bins = grp_bins,
                                         add_mask = add_mask3, bin_size = 200),
                  list("bin2" = c(0.5, 0.75, 1, 1)))
-    }
-)
+
+    expect_equal(scale_additional_masks(bins = grp_bins,
+                                        add_mask = add_mask4, bin_size = 200),
+                 list("bin1" = c(0.25, 0.25, 1, 1),
+                      "bin2" = c(0.75, 0.75, 1, 1)))
+})
 
 test_that("Transcripts group correctly (single strand)", {
   tx_grp <- group_transcripts(gr_ss)

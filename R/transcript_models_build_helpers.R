@@ -214,24 +214,37 @@ combine_masks <- function(model_masks, add_masks) {
 scale_additional_masks <- function(bins, add_mask, bin_size) {
     # Get non-redundant masking regions
     add_mask <- GenomicRanges::reduce(add_mask)
-    # Filter seqnames which are in mask regions but not in bins
-    seq_filter <-
-        as.vector(GenomeInfoDb::seqnames(add_mask)) %in%
-        GenomeInfoDb::seqlevels(bins)
-    add_mask <- add_mask[seq_filter, ]
-    if (length(add_mask) == 0) {
-        return(NA)
+    # Keep same seqlevels in both bins and masks for IRanges::Views
+    if (!identical(sort(GenomeInfoDb::seqlevels(add_mask)),
+                   sort(GenomeInfoDb::seqlevels(bins)))) {
+        seq_filter <-
+            intersect(GenomeInfoDb::seqlevels(add_mask),
+                      GenomeInfoDb::seqlevels(bins))
+        add_mask <-
+            add_mask[as.vector(GenomicRanges::seqnames(add_mask)) %in% seq_filter]
+        GenomeInfoDb::seqlevels(add_mask) <- GenomeInfoDb::seqlevelsInUse(add_mask)
+        unl_bins <- unlist(bins)
+        unl_bins <-
+            unl_bins[as.vector(GenomicRanges::seqnames(unl_bins)) %in% seq_filter]
+        GenomeInfoDb::seqlevels(unl_bins) <-
+            GenomeInfoDb::seqlevelsInUse(unl_bins)
+        gp <- names(unl_bins)
+        names(unl_bins) <- NULL
+        bins <- split(unl_bins, gp)
     }
-    # Find overlaps
-    ovr <- IRanges::findOverlapPairs(add_mask, bins)
-    # Compute the percentages of the bins overlap with the masks
-    ovr_intersect <-
-        IRanges::pintersect(ovr, drop.nohit.ranges = FALSE)
-    ovr_val <- GenomicRanges::width(ovr_intersect) / bin_size
-    # Convert the overlap fractions into vectors
-    ovr_val_ls <- base::split(ovr_val, names(ovr_val))
-    add_scale <- lapply(ovr_val_ls, function(x) {
-        1 - colSums(as.matrix(x))
+    # return NA if no masking is left
+    if (length(add_mask) == 0) return(NA)
+    # get coverage for masked regions
+    cov_mask <- GenomicRanges::coverage(add_mask)
+    # 1 indicates maksed regions, while 0 means not masked, here all regions
+    # without masks
+    cov_log <- cov_mask == 0L
+    add_scale <- lapply(bins, function(x) {
+        # view not masked regions
+        views <- IRanges::Views(cov_log, x)
+        # pick up chromosome being hit
+        views <- views[[which(lengths(views) > 0)]]
+        return(IRanges::viewSums(views) / bin_size)
     })
     return(add_scale)
 }
