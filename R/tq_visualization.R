@@ -148,6 +148,11 @@ plot_model <- function(tq,
                                                  name = "additional masks",
                                                  shape = "box",
                                                  chromosome = chrom)
+    } else if (!is.null(tq@add_mask) & tq@add_mask_scale) {
+        mask_tracks[["add"]] <- Gviz::AnnotationTrack(tq@add_mask,
+                                                      name = "additional masks",
+                                                      shape = "box",
+                                                      chromosome = chrom)
     }
 
     # Some objects for data retrieval
