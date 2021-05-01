@@ -182,6 +182,14 @@ transcript_quantifier <- function(transcripts, transcript_name_column,
   if (!(isTRUE(add_mask_scale) | isFALSE(add_mask_scale))) {
       stop("add_mask_scale must be TRUE or FALSE")
   }
+  # Check seqlengths must be set (e.g., based on chromosome lengths)
+  # This is critical, otherwise scaling bins might work unexpectly because of
+  # calling coverage()
+  if (add_mask_scale) {
+      if (any(is.na(GenomeInfoDb::seqlengths(add_mask)))) {
+          stop("Seqlengths must be set for correctly scaling bins")
+      }
+  }
 
   # **End checks**
   # Force copy of object underlying GRanges to prevent any weird side effects if
