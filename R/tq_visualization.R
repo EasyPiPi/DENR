@@ -149,7 +149,8 @@ plot_model <- function(tq,
                                                  shape = "box",
                                                  chromosome = chrom)
     } else if (!is.null(tq@add_mask) & tq@add_mask_scale) {
-        mask_tracks[["add"]] <- Gviz::AnnotationTrack(tq@add_mask,
+        sub_masks <- subsetByOverlaps(tq@add_mask, target_tx)
+        mask_tracks[["add"]] <- Gviz::AnnotationTrack(sub_masks,
                                                       name = "additional masks",
                                                       shape = "box",
                                                       chromosome = chrom)
