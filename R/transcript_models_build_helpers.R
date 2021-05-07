@@ -484,16 +484,18 @@ reduce_transcript_models <-
         return(start_end_df)
     }
     start_end_dfs <- lapply(integer_models, get_start_end_set)
-    start_end_df <- do.call(rbind.data.frame, start_end_dfs)
-    tx_group_model <- merge.data.frame(tx_group_model, start_end_df)
+    start_end_df <- data.table::rbindlist(start_end_dfs)
+    tx_group_model <-
+        data.table::merge.data.table(tx_group_model, start_end_df,
+                                     by = "tx_name", all.x = TRUE, sort = FALSE)
     # get strand info
     tx_group_model <-
-        merge.data.frame(
+        data.table::merge.data.table(
             tx_group_model,
-            data.frame(
+            data.table::data.table(
                 tx_name = GenomicRanges::values(transcripts)[, transcript_name_column],
-                strand = GenomicRanges::strand(transcripts)
-            )
+                strand = as.vector(GenomicRanges::strand(transcripts))
+            ), by = "tx_name", all.x = TRUE, sort = FALSE
         )
     # get tss and tts for transcripts on different strand
     tx_group_model$tss_set <-
@@ -506,7 +508,6 @@ reduce_transcript_models <-
                tx_group_model$start_set)
     tx_group_model <-
         tx_group_model[c("tx_name", "group", "model", "tss_set", "tts_set")]
-
     return(list(reduced_tx_models, tx_group_model))
 }
 

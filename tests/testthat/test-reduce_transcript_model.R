@@ -131,7 +131,8 @@ test_that("Transcript groupings are correct", {
             group = c(rep(1, 4), rep(2, 4)),
             model = c(1, 1, 2, 3, 1, 1, 2, 3),
             tss_set = c(1, 1, 2, 2, 1, 1, 2, 2),
-            tts_set = c(1, 1, 1, 2, 1, 1, 1, 2)
+            tts_set = c(1, 1, 1, 2, 1, 1, 1, 2),
+            stringsAsFactors = FALSE
         )
 
     expect_equal(reduce_transcript_models(list(tx_model_1, tx_model_2),
