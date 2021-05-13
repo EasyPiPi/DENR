@@ -330,6 +330,10 @@ plot_model <- function(tq,
 
     mask_colors <- c("blue", "red")
     names(mask_colors) <- c("+", "-")
+
+    # Add some space at margin to ensure transcript names are entirely displayed.
+    extension <- c("extend.left" = 0.15, "extend.right" = 0.02)
+
     # Add legend back to the last DataTrack
     if (tx_num > 1) {
         dt_idx <- max(which(sapply(args$trackList, class) == "DataTrack"))
@@ -339,7 +343,7 @@ plot_model <- function(tq,
         )
     }
 
-    args <- c(args, gene_colors, mask_colors)
+    args <- c(args, gene_colors, mask_colors, extension)
 
     return(do.call(Gviz::plotTracks, args))
 }
