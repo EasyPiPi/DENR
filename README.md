@@ -32,6 +32,10 @@ Instructions on installing tensorflow and keras from R can be found
 [here](https://tensorflow.rstudio.com/reference/keras/install_keras/).
 
 
+```
+tensorflow::install_tensorflow(version=2.5)
+```
+
 ## Overview
 DENR performs annotation based transcript level quantification on
 nascent RNA sequencing data. Although it was developed on PRO-seq data it should be
